@@ -4,3 +4,14 @@
 @media(max-width:670px){.wrap{width:calc(100% - 34px)}.mastrow{min-height:54px}.wordmark{font-size:23px;gap:7px}.brand-mark{width:30px;height:30px}.textlink{font-size:12px}.intro{padding:25px 0 19px}.kicker{font-size:9px}.intro h1{font-size:clamp(40px,9.6vw,60px);margin:9px 0 5px}.intro p{font-size:14px;max-width:420px}.desk{grid-template-columns:minmax(0,1fr);gap:21px}.viewer{aspect-ratio:1.28}.filmbar{padding:8px 12px}.topline{top:11px}.overlay{left:11px;right:11px}.viewfoot{bottom:10px}.previewtools{margin-top:8px}.switch.small button{min-height:32px}.divider{margin:14px 0}.panel{padding-top:0}.stephead{margin-bottom:9px}.stephead h2{font-size:19px}.instructions{margin-top:24px;padding-top:23px}.howgrid{grid-template-columns:1fr;gap:17px;margin:18px 0}.howgrid>div,.howgrid>div+div{position:relative;border:0;padding-left:37px}.howicon{position:absolute;left:0;top:1px}.howgrid h3{margin:0 0 3px}.note{font-size:12px}.button{min-height:45px}.footer{padding-bottom:max(20px,env(safe-area-inset-bottom))}}
 
 .turn-demo{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:6px 10px;border:1px solid var(--rule);border-radius:5px;background:transparent;font-size:12px;font-weight:600;min-height:36px}.turn-demo:hover,.turn-demo[aria-pressed="true"]{background:#e7e9e0}.turn-demo .ic{width:16px;height:16px}.roll-controls{display:flex;align-items:center;gap:12px;margin:9px 0 1px}.roll-controls label,.roll-controls .subtle{font-size:12px;color:var(--muted)}.roll-controls input{flex:1;min-width:52px;height:24px;margin:0;accent-color:var(--accent)}.roll-controls label{white-space:nowrap}.roll-controls .subtle{border:0;text-decoration:underline;text-underline-offset:3px}.view-index output{font-size:14px;font-weight:600}#motion{margin-top:3px}#motion[aria-pressed="true"]{color:var(--accent)}
+
+.profile-choice{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
+.profile-choice label,#badge-check label{font-size:14px;font-weight:600}
+.profile-choice select{max-width:64%;font:inherit;font-size:16px;background:#fbfcf6;color:var(--ink);border:1px solid var(--rule);border-radius:5px;padding:7px 4px}
+.download-link,#badge-check label,#badgeFile{display:block}
+#quickSave.primary + #prepare{margin-top:8px;width:100%}
+#badge-check{scroll-margin-top:12px}
+#badge-check h3{font-size:16px;font-weight:600;line-height:1.3;margin:18px 0 6px}
+#badgeFile{max-width:100%;margin:6px 0;font-size:14px}
+#badgeFile::file-selector-button{font:inherit;padding:8px;border:1px solid var(--rule);border-radius:5px;background:#fbfcf6;color:var(--ink);cursor:pointer}
+#badgeStatus:not(:empty){padding:10px 12px;border-left:3px solid #637b66;color:var(--ink);background:#eaece2}

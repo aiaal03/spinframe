@@ -11,6 +11,15 @@
   let exportURL, exportFile, encodeTimer;
   let canSend = false, sharing = false;
   const showStatus = message => { $("status").textContent = message; };
+  if (new URLSearchParams(location.search).get("profile") === "gen1") $("profile").value = "gen1";
+  const appleMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 1 && /MacIntel|Macintosh/.test(navigator.platform + " " + navigator.userAgent));
+  if (appleMobile) {
+    $("prepare").before($("quickSave"));
+    $("quickSave").className = "button primary";
+    $("quickSave").textContent = "Скачать JPEG";
+    $("prepare").classList.replace("primary", "light");
+  }
 
   function resetOutput() {
     version++;
@@ -35,15 +44,18 @@
     const stamp = version;
     busy = true;
     try {
-      const blob = await SpinJPEG.encode(source, {fit, focus});
+      const profile = $("profile").value;
+      const blob = await SpinJPEG.encode(source, {fit, focus, profile});
       if (stamp !== version) return;
-      exportFile = new File([blob], "spinframe-story.jpg", {type:"image/jpeg"});
+      const name = profile === "gen1" ? "spinframe-gen1.jpg" : "spinframe-story.jpg";
+      exportFile = new File([blob], name, {type:"image/jpeg"});
       exportURL = URL.createObjectURL(blob);
       try {
         canSend = typeof navigator.share === "function" &&
           typeof navigator.canShare === "function" && navigator.canShare({files:[exportFile]});
       } catch { canSend = false; }
       $("save").href = $("quickSave").href = exportURL;
+      $("save").download = $("quickSave").download = name;
       $("quickSave").hidden = false;
       $("resultSpecs").textContent = "3024 × 4032  ·  JPEG  ·  " + (blob.size/1048576).toLocaleString("ru-RU",{maximumFractionDigits:2}) + " МБ";
       $("prepare").firstElementChild.textContent = canSend ? "Поделиться фото" : "Открыть готовый JPEG";
@@ -60,6 +72,8 @@
       if (stamp !== version && encodeTimer === undefined) void encodeCurrent();
     }
   }
+
+  $("profile").addEventListener("change", () => { showStatus(""); resetOutput(); });
 
   const frame = document.createElement("canvas");
   const frameCtx = frame.getContext("2d", {alpha:false, colorSpace:"srgb"});

@@ -66,48 +66,76 @@
     }
   }
 
-  function profileSegment() {
+  function profileSegment(profile) {
     const ascii = new TextEncoder();
-    const strings = ["Meta AI", "Ray-Ban Meta Smart Glasses 2", "Spinframe"].map(s => ascii.encode(s + "\0"));
+    const string = value => ascii.encode(value + "\0");
+    const gen1 = profile === "gen1";
+    const model = gen1 ? "Ray-Ban Meta Smart Glasses" : "Ray-Ban Meta Smart Glasses 2";
+    const mainFields = [
+      [0x010f, 2, string("Meta AI")], [0x0110, 2, string(model)],
+      [0x0112, 3, 1], [0x0131, 2, string("Spinframe")]
+    ];
+    const exifFields = [];
+    if (gen1) {
+      // These timestamps describe this exported copy, and the UUID is unique to it.
+      const now = new Date();
+      const pad = n => String(n).padStart(2, "0");
+      const date = [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join(":");
+      const time = [now.getHours(), now.getMinutes(), now.getSeconds()].map(pad).join(":");
+      const timestamp = string(date + " " + time);
+      mainFields.push([0x0132, 2, timestamp]);
+      exifFields.push(
+        [0x9000, 7, ascii.encode("0220")],                  // ExifVersion
+        [0x9003, 2, timestamp], [0x9004, 2, timestamp],     // DateTimeOriginal, DateTimeDigitized
+        [0x9101, 7, Uint8Array.of(1, 2, 3, 0)],             // ComponentsConfiguration
+        [0x9286, 7, ascii.encode("ASCII\0\0\0" + crypto.randomUUID().toUpperCase())],
+        [0xa000, 7, ascii.encode("0100")]                   // FlashpixVersion
+      );
+    }
+    exifFields.push([0xa001, 3, 1], [0xa002, 4, WIDTH], [0xa003, 4, HEIGHT]); // sRGB and dimensions
+
     const dirSize = n => 2 + n * 12 + 4;
-    const main = 8, exif = main + dirSize(5);
-    let next = exif + dirSize(3);
-    const offsets = strings.map(bytes => {
-      const start = next;
-      next += bytes.length + bytes.length % 2;
-      return start;
-    });
+    const main = 8, exif = main + dirSize(mainFields.length + 1);
+    mainFields.push([0x8769, 4, exif]);
+    let next = exif + dirSize(exifFields.length);
+    const aligned = length => length + length % 2;
+    let size = next;
+    for (const [, , value] of [...mainFields, ...exifFields]) {
+      if (value instanceof Uint8Array && value.length > 4) size += aligned(value.length);
+    }
     const tiffStart = 10; // FF E1, length, "Exif\0\0", then TIFF-relative offsets
-    const bytes = new Uint8Array(tiffStart + next);
+    const bytes = new Uint8Array(tiffStart + size);
     bytes.set([0xff, 0xe1, 0, 0, 0x45, 0x78, 0x69, 0x66, 0, 0]);
     new DataView(bytes.buffer).setUint16(2, bytes.length - 2);
     const tiff = new DataView(bytes.buffer, tiffStart);
     tiff.setUint16(0, 0x4949);
     tiff.setUint16(2, 42, true);
     tiff.setUint32(4, main, true);
-    tiff.setUint16(main, 5, true);
-    tiff.setUint16(exif, 3, true);
-    function entry(directory, index, tag, type, count, value) {
-      const pos = directory + 2 + index * 12;
-      tiff.setUint16(pos, tag, true);
-      tiff.setUint16(pos + 2, type, true);
-      tiff.setUint32(pos + 4, count, true);
-      if (type === 3) tiff.setUint16(pos + 8, value, true);
-      else tiff.setUint32(pos + 8, value, true);
+    function writeDirectory(directory, fields) {
+      tiff.setUint16(directory, fields.length, true);
+      fields.forEach(([tag, type, value], index) => {
+        const pos = directory + 2 + index * 12;
+        tiff.setUint16(pos, tag, true);
+        tiff.setUint16(pos + 2, type, true);
+        tiff.setUint32(pos + 4, typeof value === "number" ? 1 : value.length, true);
+        if (typeof value === "number") {
+          if (type === 3) tiff.setUint16(pos + 8, value, true);
+          else tiff.setUint32(pos + 8, value, true);
+        } else if (value.length <= 4) {
+          bytes.set(value, tiffStart + pos + 8);
+        } else {
+          tiff.setUint32(pos + 8, next, true);
+          bytes.set(value, tiffStart + next);
+          next += aligned(value.length);
+        }
+      });
     }
-    entry(main, 0, 0x010f, 2, strings[0].length, offsets[0]); // Make
-    entry(main, 1, 0x0110, 2, strings[1].length, offsets[1]); // Model
-    entry(main, 2, 0x0112, 3, 1, 1);                        // Orientation
-    entry(main, 3, 0x0131, 2, strings[2].length, offsets[2]); // Software
-    entry(main, 4, 0x8769, 4, 1, exif);
-    entry(exif, 0, 0xa001, 3, 1, 1);                         // sRGB
-    entry(exif, 1, 0xa002, 4, 1, WIDTH);
-    entry(exif, 2, 0xa003, 4, 1, HEIGHT);
-    strings.forEach((value, i) => bytes.set(value, tiffStart + offsets[i]));
+    writeDirectory(main, mainFields);
+    writeDirectory(exif, exifFields);
     return bytes;
   }
 
-  async function addProfile(jpeg) {
+  async function addProfile(jpeg, profile) {
     // Only the browser's freshly encoded JPEG reaches here. Replace leading
     // APP1 records while preserving JFIF/ICC and the compressed pixels.
     const head = new DataView(await jpeg.slice(0, 256 * 1024).arrayBuffer());
@@ -125,7 +153,7 @@
       if (marker !== 0xffe1) parts.push(jpeg.slice(pos, end));
       pos = end;
     }
-    parts.push(profileSegment(), jpeg.slice(pos));
+    parts.push(profileSegment(profile), jpeg.slice(pos));
     return new Blob(parts, { type: "image/jpeg" });
   }
 
@@ -140,7 +168,7 @@
       draw(ctx, source, WIDTH, HEIGHT, options);
       const jpeg = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.94));
       if (!jpeg || jpeg.type !== "image/jpeg") throw new Error("Не удалось экспортировать JPEG.");
-      return await addProfile(jpeg);
+      return await addProfile(jpeg, options.profile);
     } finally {
       canvas.width = 1;
       canvas.height = 1;

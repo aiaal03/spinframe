@@ -17,7 +17,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://aiaal03.github.io/spinframe/spinframe-wide.jpg">
 <link rel="canonical" href="https://aiaal03.github.io/spinframe/">
-<link rel="stylesheet" href="./studio/style.css">
+<link rel="stylesheet" href="./studio/style.css?v=2">
 </head>
 <body>
 <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -67,19 +67,34 @@
 <div class="sliderrow" id="focusBox" hidden><label for="focus">Сдвиг кадра</label><input type="range" id="focus" min="0" max="100" value="50"></div>
 <div class="divider"></div>
 <div class="stephead"><b class="serial">03</b><h2>В сторис</h2><span class="ratio">JPEG</span></div>
+<div class="profile-choice"><label for="profile">Профиль JPEG</label><select id="profile"><option value="gen2">Ray-Ban Meta Gen 2</option><option value="gen1">Ray-Ban Meta Gen 1</option></select></div>
 <button type="button" id="prepare" class="button primary" disabled><span>Готовлю JPEG…</span><svg class="ic"><use href="#arrow"/></svg></button>
-<p class="note"><a id="quickSave" download="spinframe-story.jpg" hidden>Скачать JPEG</a></p>
-<p class="note">В меню отправки выбери Instagram → «История», если такой вариант доступен. Для Spin View можно сохранить копию в галерею и выбрать её в редакторе сторис. В копию записываются метки Ray-Ban Meta. Появление Spin View зависит от Instagram.</p>
+<a id="quickSave" class="note download-link" download="spinframe-story.jpg" hidden>Скачать JPEG</a>
+<p class="note">Для фото с телефона оба профиля экспериментальные. Значок очков и Spin View включает Instagram. <a href="#badge-check">Значок не появился?</a></p>
 <div id="status" role="status" aria-live="polite"></div>
 </section>
 </div>
 <section class="instructions" id="instructions"><div class="kicker"><span class="dash"></span> ПОСЛЕ ЭКСПОРТА</div><h2>Как включить Spin View</h2>
 <div class="howgrid">
-<div><svg class="howicon"><use href="#download"/></svg><h3>Отправь фото</h3><p>Нажми «Поделиться фото» и выбери Instagram → «История», если телефон предлагает этот вариант.</p></div>
-<div><svg class="howicon"><use href="#picture"/></svg><h3>Через галерею</h3><p>Если нужного пункта нет, скачай JPEG. На iPhone открой его в «Файлах» → «Поделиться» → «Сохранить изображение». Затем выбери копию из галереи в редакторе сторис.</p></div>
-<div><svg class="howicon"><use href="#glasses"/></svg><h3>Нажми значок очков</h3><p>Если Instagram распознал копию, выбери Spin View и опубликуй сторис. Зритель сможет поворачивать телефон и осматривать кадр.</p></div>
+<div><svg class="howicon"><use href="#download"/></svg><h3>Сохрани JPEG</h3><p>На iPhone открой скачанный JPEG в «Файлах» и нажми «Поделиться» → «Сохранить изображение».</p></div>
+<div><svg class="howicon"><use href="#picture"/></svg><h3>Посмотри на миниатюру</h3><p>Открой галерею при создании сторис. На снимках, которые Instagram распознал как снятые на очки, слева вверху виден значок очков.</p></div>
+<div><svg class="howicon"><use href="#glasses"/></svg><h3>Включи Spin View</h3><p>Открой снимок, нажми значок очков в редакторе и выбери Spin View. Зритель сможет поворачивать телефон при просмотре.</p></div>
 </div>
-<details><summary>Значок очков не появился</summary><p>Проверь, что выбрал именно экспортированный JPEG. Пересылка через мессенджер или скриншот могут удалить метки. Instagram официально описывает Spin View для съёмки на очки. На фото с телефона этот способ экспериментальный. <a href="https://creators.instagram.com/blog/creator-toolkit-for-ai-glasses" target="_blank" rel="noopener noreferrer">Инструкция Instagram ↗</a></p></details>
+<details id="badge-check"><summary>Значок очков не появился</summary>
+<h3>Попробовать другой профиль</h3>
+<p>В пробном кадре записан профиль Ray-Ban Meta Gen 1. Посмотри, появятся ли очки слева вверху на миниатюре в галерее сторис. Проверку можно закончить до публикации.</p>
+<a class="button light" href="./spinframe-gen1-test.jpg" download="spinframe-gen1-test.jpg">Скачать пробный кадр Gen 1</a>
+<p>Если значок появился, <a href="#pick">выбери своё фото</a> и укажи <a href="#profile">профиль Gen 1</a> при экспорте.</p>
+<h3>Проверить свой JPEG</h3>
+<p id="badgeHint">Выбери уже сохранённый файл Spinframe в «Файлах». Проверка прочитает производителя и модель камеры на твоём устройстве.</p>
+<label for="badgeFile">Сохранённый JPEG</label>
+<input id="badgeFile" type="file" accept=".jpg,.jpeg,image/jpeg" aria-describedby="badgeHint">
+<p id="badgeStatus" role="status" aria-live="polite"></p>
+<h3>Сравнить в Instagram</h3>
+<p>Для сравнения открой <a href="https://commons.wikimedia.org/wiki/File:Brickell_Ray_Ban_Meta_Wayfarer_Smart_Glasses_-_Colorful_facade.jpg" target="_blank" rel="noopener noreferrer">фото с настоящих очков ↗</a>. На странице выбери «Исходный файл». Сохрани его как есть и посмотри на миниатюру в той же галерее сторис.</p>
+<p>Если значок есть только у оригинала, Instagram различает эти файлы. Если его нет и у оригинала, эта проверка не определит причину.</p>
+<p><a href="./spinframe-test.jpg" download="spinframe-test.jpg">Скачать тестовый JPEG Spinframe</a> · Демо экспорта Gen 2. Instagram официально описывает Spin View для фото и видео с очков. <a href="https://creators.instagram.com/blog/creator-toolkit-for-ai-glasses" target="_blank" rel="noopener noreferrer">Инструкция Instagram ↗</a></p>
+</details>
 </section>
 </main>
 <footer class="wrap footer"><span>Spinframe</span><span>Фотостудия для сторис</span></footer>
@@ -92,8 +107,9 @@
 <a class="instagram" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">Открыть Instagram ↗</a>
 </dialog>
 <noscript>Для подготовки фото включи JavaScript в браузере.</noscript>
-<script defer src="./studio/spin-jpeg.js"></script>
+<script defer src="./studio/spin-jpeg.js?v=2"></script>
 <script defer src="./studio/spin-render.js"></script>
 <script defer src="./studio/roll.js"></script>
-<script defer src="./studio/app.js"></script>
+<script defer src="./studio/app.js?v=2"></script>
+<script defer src="./studio/badge-check.js?v=2"></script>
 </body></html>
