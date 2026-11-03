@@ -8,6 +8,9 @@
   const fallback = "Этот файл не открылся. Выбери JPEG или PNG. Для HEIC попробуй Safari или сохрани копию в JPEG.";
   let source, localURL, pending = 0, version = 0, busy = false, loading = false, frameNumber = 1;
   let fit = "contain", focus = 0.5, mode = "look";
+  const demo = new Image();
+  let movieMode = new URLSearchParams(location.search).get("format") === "mov" || location.hash === "#movie";
+  let movieJob, movieURL, movieFile;
   let exportURL, exportFile, encodeTimer;
   let canSend = false, sharing = false;
   const showStatus = message => { $("status").textContent = message; };
@@ -23,6 +26,15 @@
 
   function resetOutput() {
     version++;
+    movieJob?.abort();
+    movieJob = undefined;
+    if (movieURL) URL.revokeObjectURL(movieURL);
+    movieFile = movieURL = undefined;
+    $("movieSave").hidden = $("movieShare").hidden = true;
+    $("movieSave").removeAttribute("href");
+    $("movieStatus").textContent = source && source !== demo ? "" : "Выбери своё фото или сделай снимок кнопкой «Камера».";
+    $("makeMovie").hidden = false;
+    $("makeMovie").disabled = loading || !source || source === demo;
     clearTimeout(encodeTimer);
     encodeTimer = undefined;
     if (exportURL) URL.revokeObjectURL(exportURL);
@@ -34,13 +46,13 @@
     $("quickSave").removeAttribute("href");
     $("save").removeAttribute("href");
     $("resultThumb").removeAttribute("src");
-    if (source && !loading) {
+    if (!movieMode && source && !loading) {
       encodeTimer = setTimeout(() => { encodeTimer = undefined; void encodeCurrent(); }, 250);
     }
   }
 
   async function encodeCurrent() {
-    if (busy || loading || !source || exportFile) return;
+    if (movieMode || busy || loading || !source || exportFile) return;
     const stamp = version;
     busy = true;
     try {
@@ -74,6 +86,58 @@
   }
 
   $("profile").addEventListener("change", () => { showStatus(""); resetOutput(); });
+
+  function showFormat(asMovie) {
+    movieMode = asMovie;
+    $("useJPEG").setAttribute("aria-pressed", String(!asMovie));
+    $("useMovie").setAttribute("aria-pressed", String(asMovie));
+    $("jpegPanel").hidden = asMovie;
+    $("movie").hidden = !asMovie;
+    $("modeFrame").textContent = asMovie ? "Кадр MOV" : "Кадр JPEG";
+    $("saveStepTitle").textContent = asMovie ? "Сохрани MOV" : "Сохрани JPEG";
+    $("saveStepText").textContent = asMovie
+      ? "На iPhone открой MOV в «Файлах» и нажми «Поделиться» → «Сохранить видео»."
+      : "На iPhone открой JPEG в «Файлах» и нажми «Поделиться» → «Сохранить изображение».";
+    showStatus("");
+    resetOutput();
+  }
+  $("useJPEG").addEventListener("click", () => { if (movieMode) showFormat(false); });
+  $("useMovie").addEventListener("click", () => { if (!movieMode) showFormat(true); });
+  showFormat(movieMode);
+
+  const movieHelp = "На iPhone сохрани видео в «Фото» и выбери его в галерее сторис. Если на миниатюре есть очки, нажми их в редакторе и выбери Spin View.";
+  $("makeMovie").addEventListener("click", async () => {
+    if (!source || source === demo || loading || movieJob) return;
+    const job = new AbortController();
+    movieJob = job;
+    $("makeMovie").disabled = true;
+    $("movieStatus").textContent = "Готовлю видео на устройстве…";
+    try {
+      const blob = await SpinStill.encode(source, {fit, focus, signal:job.signal, onProgress: value => {
+        if (!job.signal.aborted) $("movieStatus").textContent = "Готовлю видео · " + Math.round(value * 100) + "%";
+      }});
+      if (job.signal.aborted) return;
+      movieFile = new File([blob], "spinframe-story.mov", {type:"video/quicktime"});
+      movieURL = URL.createObjectURL(movieFile);
+      $("movieSave").href = movieURL;
+      $("movieSave").hidden = false;
+      $("makeMovie").hidden = true;
+      let shareable = false;
+      try { shareable = typeof navigator.share === "function" && navigator.canShare?.({files:[movieFile]}); } catch { /* Download remains available. */ }
+      $("movieShare").hidden = !shareable;
+      $("movieStatus").textContent = movieHelp;
+    } catch (err) {
+      if (!job.signal.aborted) $("movieStatus").textContent = err.message || "Не удалось создать MOV на этом устройстве.";
+    } finally {
+      if (job === movieJob) { movieJob = undefined; $("makeMovie").disabled = false; }
+    }
+  });
+  $("movieShare").addEventListener("click", async () => {
+    const file = movieFile;
+    if (!file) return;
+    try { await navigator.share({files:[file]}); }
+    catch (err) { if (file === movieFile && err.name !== "AbortError") $("movieStatus").textContent = "Скачай MOV и открой его в «Файлах» → «Поделиться» → «Сохранить видео»."; }
+  });
 
   const frame = document.createElement("canvas");
   const frameCtx = frame.getContext("2d", {alpha:false, colorSpace:"srgb"});
@@ -138,7 +202,7 @@
     viewer.tabIndex = spin ? 0 : -1;
     $("modeLook").setAttribute("aria-pressed", String(spin));
     $("modeFrame").setAttribute("aria-pressed", String(!spin));
-    $("gesture").querySelector("span").textContent = spin ? "Вращай рамку по кругу" : "Итоговая рамка JPEG";
+    $("gesture").querySelector("span").textContent = spin ? "Вращай рамку по кругу" : "Итоговая рамка";
     $("gesture").querySelector("use").setAttribute("href", spin ? "#turn" : "#expand");
     viewer.querySelector(".view-index").hidden = !spin;
     $("rollControls").hidden = $("replay").hidden = !spin;
@@ -150,7 +214,7 @@
     $("contain").setAttribute("aria-pressed", String(fit === "contain"));
     $("cover").setAttribute("aria-pressed", String(fit === "cover"));
     $("focusBox").hidden = fit !== "cover";
-    $("fitNote").textContent = fit === "contain" ? "Весь снимок войдёт в JPEG. Поля заполнятся мягким фоном." : "Рамка заполнится снимком. Сдвинь кадр, чтобы выбрать нужный фрагмент.";
+    $("fitNote").textContent = fit === "contain" ? "Весь снимок войдёт в кадр. Поля заполнятся мягким фоном." : "Рамка заполнится снимком. Сдвинь кадр, чтобы выбрать нужный фрагмент.";
     setMode("frame");
   }
   $("contain").addEventListener("click", () => setFit("contain"));
@@ -226,7 +290,6 @@
 
   const resize = new ResizeObserver(paint);
   resize.observe(viewer);
-  const demo = new Image();
   demo.onload = () => {
     if (!source) { source = demo; resetOutput(); setMode("look"); }
   };
